@@ -1,11 +1,11 @@
 import base64
-import json
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
+from models import PlantAnalysis
 
 load_dotenv()
 
@@ -24,20 +24,13 @@ client = OpenAI(
 )
 
 
-class AnalysisResult(BaseModel):
-    name: str
-    health: str
-    description: str
-    care_tips: list[str]
-
-
-@app.post("/analyze", response_model=AnalysisResult)
+@app.post("/analyze", response_model=PlantAnalysis)
 async def analyze_plant(image: UploadFile = File(...)):
     image_data = await image.read()
     image_b64 = base64.standard_b64encode(image_data).decode("utf-8")
     media_type = image.content_type or "image/jpeg"
 
-    response = client.chat.completions.create(
+    response = client.beta.chat.completions.parse(
         model="google/gemini-2.5-flash",
         messages=[
             {
@@ -51,23 +44,16 @@ async def analyze_plant(image: UploadFile = File(...)):
                     },
                     {
                         "type": "text",
-                        "text": (
-                            "Analyze this plant image and respond in JSON with exactly these fields:\n"
-                            "- name: common name of the plant\n"
-                            "- health: one of 'Healthy', 'Needs Attention', or 'Unhealthy'\n"
-                            "- description: 1-2 sentence description of the plant and its current condition\n"
-                            "- care_tips: list of 3 short care tips\n"
-                            "Respond with only the JSON object, no markdown."
-                        ),
+                        "text": "Analyze this plant image. Identify the plant, assess its health, and provide care tips.",
                     },
                 ],
             }
         ],
+        response_format=PlantAnalysis,
         max_tokens=1024,
     )
 
-    result = json.loads(response.choices[0].message.content)
-    return AnalysisResult(**result)
+    return response.choices[0].message.parsed
 
 
 class AskRequest(BaseModel):
