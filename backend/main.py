@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Header, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
-from models import PlantAnalysis
+from models import PlantAnalysis, SegmentationResult
 
 load_dotenv()
 
@@ -70,6 +70,35 @@ async def analyze_plant(
     )
 
     return response.choices[0].message.parsed
+
+
+@app.post("/segment", response_model=SegmentationResult)
+async def segment_plants(image: UploadFile = File(...)):
+    image_data = await image.read()
+    image_b64 = base64.standard_b64encode(image_data).decode("utf-8")
+    media_type = image.content_type or "image/jpeg"
+
+    response = client.beta.chat.completions.parse(
+        model="google/gemini-2.5-flash",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{image_b64}"}},
+                {
+                    "type": "text",
+                    "text": (
+                        "Detect every distinct plant in this image. "
+                        "Return bounding box coordinates as integers 0–1000, where (0,0) is top-left. "
+                        "If no plants are found, return an empty segments list."
+                    ),
+                },
+            ],
+        }],
+        response_format=SegmentationResult,
+        max_tokens=1024,
+    )
+
+    return response.choices[0].message.parsed or SegmentationResult(segments=[])
 
 
 class AskRequest(BaseModel):
