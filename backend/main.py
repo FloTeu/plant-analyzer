@@ -1,7 +1,7 @@
 import base64
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Header, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
@@ -24,11 +24,24 @@ client = OpenAI(
 )
 
 
+def parse_language(accept_language: str | None) -> str:
+    """Extract the primary language tag from an Accept-Language header value."""
+    if not accept_language:
+        return "English"
+    primary = accept_language.split(",")[0].split(";")[0].strip()
+    return primary or "English"
+
+
 @app.post("/analyze", response_model=PlantAnalysis)
-async def analyze_plant(image: UploadFile = File(...)):
+async def analyze_plant(
+    image: UploadFile = File(...),
+    language: str | None = Query(default=None, description="Response language (e.g. 'de', 'fr'). Defaults to Accept-Language header."),
+    accept_language: str | None = Header(default=None),
+):
     image_data = await image.read()
     image_b64 = base64.standard_b64encode(image_data).decode("utf-8")
     media_type = image.content_type or "image/jpeg"
+    response_language = language or parse_language(accept_language)
 
     response = client.beta.chat.completions.parse(
         model="google/gemini-2.5-flash",
@@ -44,7 +57,10 @@ async def analyze_plant(image: UploadFile = File(...)):
                     },
                     {
                         "type": "text",
-                        "text": "Analyze this plant image. Identify the plant, assess its health, and provide care tips.",
+                        "text": (
+                            f"Analyze this plant image. Identify the plant, assess its health, and provide care tips. "
+                            f"Respond in the following language: {response_language}."
+                        ),
                     },
                 ],
             }
