@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = OpenAI()
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.environ["OPENROUTER_API_KEY"],
+)
 
 
 class AnalysisResult(BaseModel):
@@ -34,7 +38,7 @@ async def analyze_plant(image: UploadFile = File(...)):
     media_type = image.content_type or "image/jpeg"
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="google/gemini-2.5-flash",
         messages=[
             {
                 "role": "user",
@@ -64,6 +68,24 @@ async def analyze_plant(image: UploadFile = File(...)):
 
     result = json.loads(response.choices[0].message.content)
     return AnalysisResult(**result)
+
+
+class AskRequest(BaseModel):
+    question: str
+
+
+class AskResponse(BaseModel):
+    answer: str
+
+
+@app.post("/ask", response_model=AskResponse)
+async def ask(request: AskRequest):
+    response = client.chat.completions.create(
+        model="google/gemini-2.5-flash",
+        messages=[{"role": "user", "content": request.question}],
+        max_tokens=1024,
+    )
+    return AskResponse(answer=response.choices[0].message.content)
 
 
 @app.get("/health")
