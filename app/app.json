@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Plant Analyzer",
+    "slug": "plant-analyzer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hackathon.plantanalyzer",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to take photos of plants for analysis.",
+        "NSPhotoLibraryUsageDescription": "Used to select plant photos for analysis."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "package": "com.hackathon.plantanalyzer"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+
+# Node / Expo
+node_modules/
+.expo/
+web-build/
+*.tsbuildinfo
