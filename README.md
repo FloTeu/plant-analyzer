@@ -32,6 +32,18 @@ npm install
 npx expo start
 ```
 
+## Feature Roadmap
+
+### Backend
+- [ ] Health checkup of plant
+- [ ] Identification of plant genus
+- [ ] Segmentation of plants in input images
+
+### Frontend
+- [ ] Analyzed health checkup view
+- [ ] Store plant to user browser session
+- [ ] Highlight plant segments in frontend view (requires segmentation)
+
 ## API
 
 `POST /analyze` — Upload an image file, returns:
@@ -44,3 +56,4 @@ npx expo start
   "care_tips": ["...", "...", "..."]
 }
 ```
+
